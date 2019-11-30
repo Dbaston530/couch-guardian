@@ -197,15 +197,10 @@ time.sleep(1)
 
 # IBM credentials
 # Please see credentials.py
-deviceID = "pi4"
-username = "52ce675d-4e87-4b97-8553-c623c54be742-bluemix"
-apikey = "fZsK3HT2Xeb8BeKlvXfbSr_xwP98bGpkPBhKdT6ItmDp"
+
 
 # IBM Watson credentials
-orgId = "pj8v34"
-typeId = "pi"
-deviceId = "01"
-token = "VffjhhkesMfh+VsmeD"
+
 
 # Global variable
 isMotion=[False,'imagePath']
