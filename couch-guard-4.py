@@ -58,13 +58,13 @@ import RPi.GPIO as GPIO
 from picamera import PiCamera
 from time import sleep
 import random
-from pygame import mixer
 import threading
 #from pkg.credentials import *
+from pkg.deterrent import *
 from pkg.IBMWatsonIoT import *
 from pkg.IBMDatabase import *
 #from pkg.picamMotionDetect import *
-from pkg.petDetection import *
+#from pkg.petDetection import *
 
 # Image recog imports added by D.B.
 # Import packages
@@ -107,10 +107,13 @@ def SendEmail(picName):
         file_name = f.name
         msg.add_attachment(file_data, maintype='image', subtype=file_type, filename=file_name)
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        smtp.send_message(msg)
-
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            smtp.send_message(msg)
+    except:
+        print("Email error")
+        
 # If tensorflow is not installed, import interpreter from tflite_runtime, else import from regular tensorflow
 pkg = importlib.util.find_spec('tensorflow')
 if pkg is None:
@@ -238,7 +241,10 @@ orgId = " "
 typeId = " "
 deviceId = " "
 token = " "
-
+try:
+    from pkg.credentials import *
+except:
+    print("credential.py does not exist")
 # Global variable
 isMotion=[False,'imagePath']
 
@@ -251,6 +257,7 @@ GPIO.setup(21, GPIO.OUT)
 
 # mixer settings
 audioFile = 'res/sample.mp3'
+deterrentByPet = True
 
 # General settings
 lastClassifyTime = 0
@@ -267,9 +274,8 @@ dbName= "cgdb"
 
 #### Main code starts here ####
 
-# Initialize mixer
-mixer.init()
-mixer.music.load(audioFile)
+# deterrent object
+deter=Deterrent(audioFile)
 
 # IBM Cloudant connection
 db=IBMDatabase(deviceID,username,apikey)
@@ -428,9 +434,16 @@ while True:
         # if more than minWaitingTime beyond last activation,
         # then activate deterrent if pet is detected        
         if (time.time() - lastActivatedTime) > minWaitingTime:         
-            if (petType > 0):
-                mixer.music.play()            
+            if (petType > 0):               
+                if (deterrentByPet):
+                    deter.activate(petType)
+                    timeAdjust = 5
+                else:
+                    deter.activate(2)
+                    timeAdjust = 0
                 lastActivatedTime = time.time()
+                if (petType == 1):
+                    lastActivatedTime = lastActivatedTime - timeAdjust
                 
         # if more than minWaitingTime beyong last motion detection,
         # then upload data to IBM Cloudant and send signal to WatsonIoT
@@ -444,7 +457,7 @@ while True:
         GPIO.output(21, False)
         # audio plays for at least minWaitingTime seconds
         if (time.time() - lastActivatedTime) > minWaitingTime:            
-            mixer.music.stop()
+            deter.stop()
 # Clean up
 cv2.destroyAllWindows()
 print(threading.enumerate())
