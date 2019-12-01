@@ -1,5 +1,9 @@
+#!/usr/bin/env python3
 '''
 Couch-Guard ver.4: attempting to add email photo functionality
+***To run on system start-up***
+crontab -e
+add "@reboot sleep 30 && sh /home/pi/couch-guardian/cgLauncher.sh >/home/pi/couch-guardian/logs/cronlog 2>&1"
 
 ***To install IBM Watson IoT Platform:
 sudo apt-get update
@@ -254,16 +258,19 @@ isMotion=[False,'imagePath']
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(21, GPIO.OUT)
+# button to stop the program. When pressed, input is 0 or False
+button = 17
+GPIO.setup(button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 # mixer settings
-audioFile = 'res/sample.mp3'
+audioFile = 'res/DogSound.mp3'
 deterrentByPet = True
 
 # General settings
 lastClassifyTime = 0
 lastActivatedTime = 0
 lastUploadTime = 0
-minWaitingTime = 10
+minWaitingTime = 5
 minClassifyTime = 5
 
 petClass = ['Non-Pet','Cat','Dog']
@@ -322,6 +329,8 @@ while True:
     station_xmin = 0
     
     petType = 0
+    
+    object_name =''
     
     pet_x = 0
     pet_y = 0
@@ -395,7 +404,8 @@ while True:
     cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
 
     # All the results have been drawn on the frame, so it's time to display it.
-    cv2.imshow('Object detector', frame)
+    if "DISPLAY" in os.environ:
+        cv2.imshow('Object detector', frame)
 
     # Calculate framerate
     t2 = cv2.getTickCount()
@@ -403,7 +413,7 @@ while True:
     frame_rate_calc= 1/time1
 
     # Press 'q' to quit
-    if cv2.waitKey(1) == ord('q'):
+    if cv2.waitKey(1) == ord('q') or GPIO.input(button) == False:
         break
     
     #if motion is detected:
@@ -437,7 +447,7 @@ while True:
             if (petType > 0):               
                 if (deterrentByPet):
                     deter.activate(petType)
-                    timeAdjust = 5
+                    timeAdjust = 0
                 else:
                     deter.activate(2)
                     timeAdjust = 0
