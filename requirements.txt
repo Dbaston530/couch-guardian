@@ -36,7 +36,7 @@ requests==2.22.0
 requests-oauthlib==1.3.0
 requests-toolbelt==0.9.1
 RPi.GPIO==0.7.0
-rsa==4.0
+rsa==4.7
 six==1.13.0
 tensorboard==2.0.1
 tensorflow==2.5.3
